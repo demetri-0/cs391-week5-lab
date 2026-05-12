@@ -30,10 +30,33 @@ class OrderPricingTest {
         assertEquals(5000, total);
     }
 
-    
+
     // -------------------- Boundary / edge cases --------------------
 
-    
+    @Test
+    void bulkQuantityAcrossMultipleItemsGetsDiscount() {
+        List<OrderPricing.LineItem> items = List.of(
+                new OrderPricing.LineItem("PEN", 5, 200),
+                new OrderPricing.LineItem("NOTEBOOK", 5, 300)
+        );
+
+        int total = pricing.totalCents(items);
+
+        // Subtotal 2500 + shipping 799 - bulk discount 300
+        assertEquals(2999, total);
+    }
+
+    @Test
+    void subtotalBelowFreeShippingAddsShipping() {
+        List<OrderPricing.LineItem> items = List.of(
+                new OrderPricing.LineItem("NOTEBOOK", 1, 4999)
+        );
+
+        int total = pricing.totalCents(items);
+
+        assertEquals(5798, total);
+    }
+
 
     // -------------------- Validation tests --------------------
 
@@ -43,7 +66,24 @@ class OrderPricingTest {
                 () -> pricing.totalCents(null));
     }
 
-    
+    @Test
+    void invalidLineItemThrowsException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new OrderPricing.LineItem(null, 1, 100));
+        assertThrows(IllegalArgumentException.class,
+                () -> new OrderPricing.LineItem("", 1, 100));
+        assertThrows(IllegalArgumentException.class,
+                () -> new OrderPricing.LineItem("PEN", 0, 100));
+        assertThrows(IllegalArgumentException.class,
+                () -> new OrderPricing.LineItem("PEN", 1, -1));
+    }
+
+    @Test
+    void nullLineItemThrowsException() {
+        assertThrows(NullPointerException.class,
+                () -> pricing.totalCents(List.of((OrderPricing.LineItem) null)));
+    }
+
 
     
 }
